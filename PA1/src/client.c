@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include "log.h"
 
 #define PORT 8080
 #define SERVER_IP "127.0.0.1"

@@ -1,41 +1,44 @@
-TARGET_EXEC ?= a.out
+# TARGET_EXEC ?= server
+
+# BUILD_DIR ?= ./build
+# SRC_DIRS ?= ./src
+
+# SRCS := $(shell find $(SRC_DIRS) -name *.c)
+# OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
+# DEPS := $(OBJS:.o=.d)
+
+# INC_DIRS := $(shell find $(SRC_DIRS) -type d)
+# INC_FLAGS := $(addprefix -I,$(INC_DIRS))
+
+# CPPFLAGS ?= $(INC_FLAGS) -MMD -MP
+
+# $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
+# 	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+
+# # c source
+# $(BUILD_DIR)/%.c.o: %.c
+# 	$(MKDIR_P) $(dir $@)
+# 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+# .PHONY: clean
+
+# clean:
+# 	$(RM) -r $(BUILD_DIR)
 
 BUILD_DIR ?= ./build
-SRC_DIRS ?= ./src
+SRC_DIR ?= ./src
+CC = gcc
+CFLAGS = -Wall
+LDFLAGS =
+.PHONY: all clean
 
-SRCS := $(shell find $(SRC_DIRS) -name *.c)
-OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
-DEPS := $(OBJS:.o=.d)
+$(BUILD_DIR)/client: $(SRC_DIR)/client.c $(SRC_DIR)/log.c $(SRC_DIR)/const.h
+	$(CC) -o $(BUILD_DIR)/client $(CFLAGS) $(SRC_DIR)/client.c $(SRC_DIR)/log.c
 
-INC_DIRS := $(shell find $(SRC_DIRS) -type d)
-INC_FLAGS := $(addprefix -I,$(INC_DIRS))
+$(BUILD_DIR)/server: $(SRC_DIR)/server.c $(SRC_DIR)/log.c $(SRC_DIR)/log.h $(SRC_DIR)/const.h
+	$(CC) -o $(BUILD_DIR)/server $(CFLAGS) $(SRC_DIR)/server.c $(SRC_DIR)/log.c
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP
-
-$(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
-
-# c source
-$(BUILD_DIR)/%.c.o: %.c
-	$(MKDIR_P) $(dir $@)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-.PHONY: clean
+all: $(BUILD_DIR)/client $(BUILD_DIR)/server
 
 clean:
-	$(RM) -r $(BUILD_DIR)
-
--include $(DEPS)
-
-MKDIR_P ?= mkdir -p
-
-# CC = gcc
-# CFLAGS = -Wall
-# LDFLAGS =
-# OBJFILES = stack.o main.o
-# TARGET = stacktest
-# all: $(TARGET)
-# $(TARGET): $(OBJFILES)
-# $(CC) $(CFLAGS) -o $(TARGET) $(OBJFILES) $(LDFLAGS)
-# clean:
-# rm -f $(OBJFILES) $(TARGET) *~
+	yes | rm -f $(BUILD_DIR)/*

@@ -23,29 +23,29 @@
 #endif
 
 // Reject out of sequence
-#ifndef REJECT_SUB_CODE_1
-#define REJECT_SUB_CODE_1 0xFFF4
+#ifndef REJECT_OUT_OF_SEQUENCE
+#define REJECT_OUT_OF_SEQUENCE 0xFFF4
 #endif
 
 // Reject length mismatch
-#ifndef REJECT_SUB_CODE_2
-#define REJECT_SUB_CODE_2 0xFFF5
+#ifndef REJECT_LENGTH_MISMATCH
+#define REJECT_LENGTH_MISMATCH 0xFFF5
 #endif
 
 // Reject end of packet missing
-#ifndef REJECT_SUB_CODE_3
-#define REJECT_SUB_CODE_3 0xFFF6
+#ifndef REJECT_PACKET_MISSING
+#define REJECT_PACKET_MISSING 0xFFF6
 #endif
 
 // Reject duplicate packet
-#ifndef REJECT_SUB_CODE_4
-#define REJECT_SUB_CODE_4 0xFFF7
+#ifndef REJECT_DUP_PACKET
+#define REJECT_DUP_PACKET 0xFFF7
 #endif
 
 // User-made Definitions for hard-coded values.
 // hard-coded the port number (picked it randomly, and it was available).
-#ifndef SERVICE_PORT
-#define SERVICE_PORT 23456
+#ifndef SERVER_PORT
+#define SERVER_PORT 23456
 #endif
 
 #ifndef BUFFER_LEN
