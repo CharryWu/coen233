@@ -1,3 +1,11 @@
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 #ifndef START_ID
 #define START_ID 0xFFFF
 #endif
@@ -8,6 +16,10 @@
 
 #ifndef LENGTH_MAX
 #define LENGTH_MAX 0xFF
+#endif
+
+#ifndef MAX_ID
+#define MAX_ID 0xFF
 #endif
 
 #ifndef DATA
@@ -62,6 +74,20 @@
 #define NUM_PACKETS 5
 #endif
 
+// Number of packets the client will send the server.
+#ifndef CLIENT_MAX_ATTEMPTS
+#define CLIENT_MAX_ATTEMPTS 3
+#endif
+
+// Timeout for server to receive next packet from the same client
+#ifndef SERVER_WAIT_TIMEOUT
+#define SERVER_WAIT_TIMEOUT 2000
+#endif
+
+// Timeout for client to receive next ACK packet from the server
+#ifndef CLIENT_RECV_TIMEOUT
+#define CLIENT_RECV_TIMEOUT 2000
+#endif
 
 //Data structures for sending data to the server and receiving return ACK/REJECTs.
 typedef struct data_pkt {
