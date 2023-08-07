@@ -35,6 +35,11 @@
 #endif
 
 // Reject out of sequence
+#ifndef NO_ERROR
+#define NO_ERROR 0x0000
+#endif
+
+// Reject out of sequence
 #ifndef REJECT_OUT_OF_SEQUENCE
 #define REJECT_OUT_OF_SEQUENCE 0xFFF4
 #endif
@@ -56,17 +61,17 @@
 
 // User-made Definitions for hard-coded values.
 // hard-coded the port number (picked it randomly, and it was available).
-#ifndef SERVER_PORT
-#define SERVER_PORT 23456
+#ifndef DEFAULT_SERVER_PORT
+#define DEFAULT_SERVER_PORT 8080
 #endif
 
 #ifndef BUFFER_LEN
 #define BUFFER_LEN 2048
 #endif
 
-// client ID - set it myself to 0x42 because 42's the answer to life.
+// client ID
 #ifndef CLIENT_ID
-#define CLIENT_ID 0x42
+#define CLIENT_ID 0x00
 #endif
 
 // Number of packets the client will send the server.
@@ -86,11 +91,11 @@
 
 // Timeout for client to receive next ACK packet from the server
 #ifndef CLIENT_RECV_TIMEOUT
-#define CLIENT_RECV_TIMEOUT 2000
+#define CLIENT_RECV_TIMEOUT 3000
 #endif
 
-//Data structures for sending data to the server and receiving return ACK/REJECTs.
-typedef struct data_pkt {
+// Client packet struct
+typedef struct request_packet {
     short start_id;
     char client_id;
     short data;
@@ -98,13 +103,15 @@ typedef struct data_pkt {
     char length;
     char payload[LENGTH_MAX];
     short end_id;
-} data_pkt;
+} request_packet;
 
-typedef struct return_pkt {
+// Unified server return packet interface
+// For both ACK/REJECT packets
+typedef struct response_packet {
     short start_id;
     char client_id;
     short type;
     short rej_sub;
     char seg_num;
     short end_id;
-} return_pkt;
+} response_packet;

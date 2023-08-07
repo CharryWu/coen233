@@ -3,6 +3,8 @@
         "*.js": "javascriptreact",
         "stdio.h": "c",
         "stdlib.h": "c",
-        "const.h": "c"
+        "const.h": "c",
+        "types.h": "c",
+        "wordsize.h": "c"
     }
 }
