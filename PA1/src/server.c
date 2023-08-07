@@ -57,8 +57,6 @@ int main(int argc, char **argv) {
     int packet_counter = 0; // packet-segment-num expected
     int is_connect_alive = FALSE; // flag for determining if a connection is still alive
     log_info("test");
-    memset((char *)&server_addr, 0, addrlen);
-    memset((char *)&client_addr, 0, addrlen);
 
     // Set port from command line argument
     if (argc < 2) {
@@ -75,6 +73,8 @@ int main(int argc, char **argv) {
     }
 
     // Setup the Server Sock Addr
+    memset((char *)&server_addr, 0, addrlen);
+    memset((char *)&client_addr, 0, addrlen);
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY); // accepts traffic from all IPv4 addresses on the local machine
     server_addr.sin_port = htons(port);
@@ -95,7 +95,8 @@ int main(int argc, char **argv) {
 
     log_info("PA1 Server: Listening for incoming connection on port %d", port);
 
-    // The Server loop, since we're using UDP protocol, no need to call accept()
+    // ======================== SERVER LOOP ========================
+    // since we're using UDP protocol, no need to call accept()
     while (TRUE) {
         if (is_connect_alive) {
             // Detect if socket status has been changed. If changed, then proceed to get data using recvfrom
@@ -136,7 +137,7 @@ int main(int argc, char **argv) {
 
         // Send return packet to the Client via the socket.
         if (sendto(server_fd, &rsp_pkt, sizeof(response_packet), 0, (struct sockaddr *)&client_addr, addrlen) < 0) {
-            log_error("Server Error -- Failed to Send Packet to Client ip = %s.", client_ip);
+            log_error("Server Error: Failed to Send Packet to Client ip = %s.", client_ip);
             // doesn't return -1 on this failure: Server continues to operate in case issue was on Client's end
         }
     }  // No exit for the Server - it will always wait for Clients. Force-kill Server via CLI (ctrl-C).

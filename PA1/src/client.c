@@ -13,7 +13,7 @@
 #include "const.h"
 #include "log.h"
 
-void init_request_packets(request_packet req_pkts[NUM_PACKETS], char buffer[BUFFER_LEN]) {
+void init_request_packets(request_packet req_pkts[NUM_PACKETS], char payload[BUFFER_LEN]) {
     for (int i = 0; i < NUM_PACKETS; i++) {
         req_pkts[i].start_id = START_ID;
         req_pkts[i].client_id = CLIENT_ID;
@@ -21,7 +21,7 @@ void init_request_packets(request_packet req_pkts[NUM_PACKETS], char buffer[BUFF
         req_pkts[i].end_id = END_ID;
         // The more specific details to differentiate each packet (seg-no, payload, length).
         req_pkts[i].seg_num = i;
-        strncpy(req_pkts[i].payload, buffer, LENGTH_MAX);  // used buffer to ensure message fit in the payload
+        strncpy(req_pkts[i].payload, payload, LENGTH_MAX);  // used buffer to ensure message fit in the payload
         req_pkts[i].length = sizeof(req_pkts[i].payload);
     }
 }
@@ -43,17 +43,17 @@ void init_test_case(int test_number, request_packet req_pkts[NUM_PACKETS]) {
         }
         case 2: {
             log_info("Setting Test Case 2: Mismatch in Length.");
-            req_pkts[2].length += 1; // Adding 1 to length to create bad length (off-by-one error)
+            req_pkts[2].length += 1;  // Adding 1 to length to create bad length (off-by-one error)
             break;
         }
         case 3: {
             log_info("Setting Test Case 3: Incorrect End of Packet ID.");
-            req_pkts[4].end_id = END_ID - 1; // One less than the specified end id
+            req_pkts[4].end_id = END_ID - 1;  // One less than the specified end id
             break;
         }
         case 4: {
             log_info("Setting Test Case 4: Duplicate Packets.");
-            req_pkts[4] = req_pkts[3]; // duplicate packet 3
+            req_pkts[4] = req_pkts[3];  // duplicate packet 3
             break;
         }
         default: {
@@ -104,11 +104,9 @@ int main(int argc, char **argv) {
     socklen_t addrlen = sizeof(struct sockaddr_in);  // length of a sockaddr_in to be used in bind() and recvfrom(), sendto()
     int recv_bytes;                                  // received packet size in bytes, used as sanity check
     response_packet rsp_pkt;                         // struct for response packet from server
-    int poll_ret;                                    // return value for poll(), the number of fds which status changes been detected. Used as sanity check
-    char buffer[BUFFER_LEN];                         // buffer for putting messages into (because I couldn't bother counting)
+    int poll_res;                                    // return value for poll(), the number of fds which status changes been detected. Used as sanity check
+    static char payload_pad[BUFFER_LEN];             // padding that fakes the payload
 
-    memset((char *)&server_addr, 0, addrlen);
-    memset((char *)&client_addr, 0, addrlen);
 
     // Create Client UDP socket
     if ((client_sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -118,6 +116,7 @@ int main(int argc, char **argv) {
 
     // Setup the Client Sock Addr
     // Bind it to the Socket and the Selected Port for this communication
+    memset((char *)&client_addr, 0, addrlen);
     client_addr.sin_family = AF_INET;
     client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     // no need to specify client port
@@ -128,6 +127,7 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
     // Define the Server Sock Addr that Client needs to connect to for package sending/receiving.
+    memset((char *)&server_addr, 0, addrlen);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 
     // Initialize request packets for testing
     request_packet req_pkts[NUM_PACKETS];  // holds 5 request packets for testing
-    init_request_packets(req_pkts, buffer);
+    init_request_packets(req_pkts, payload_pad);
     init_test_case(test_number, req_pkts);
 
     // Send all packets in req_pkts
@@ -149,14 +149,13 @@ int main(int argc, char **argv) {
         // Send the packe to the server via the set-up socket connections.
         log_info("Client is sending Packet %d to Server. Attempt %d", i, attempt_counter);
         if (sendto(client_sock_fd, &req_pkt, sizeof(request_packet), 0, (struct sockaddr *)&server_addr, addrlen) < 0) {
-            log_error("Test case %d: sendto() packet number %d", test_number, i);
+            log_error("Error: Test case %d: sendto() packet number %d", test_number, i);
             return -1;
         }
 
         while (attempt_counter <= CLIENT_MAX_ATTEMPTS) {
-            poll_ret = poll(&client_timer_pollfd, 1, CLIENT_RECV_TIMEOUT);
-            if (poll_ret > 0) {  // Got something before time-out, need to read it in from the socket.
-                // Reading in the return packet from the socket.
+            poll_res = poll(&client_timer_pollfd, 1, CLIENT_RECV_TIMEOUT);
+            if (poll_res > 0) { // Normal case
                 recv_bytes = recvfrom(client_sock_fd, &rsp_pkt, sizeof(response_packet), 0, (struct sockaddr *)&server_addr, &addrlen);
                 log_info("Received %d bytes from server", recv_bytes);
                 if (recv_bytes < 0) {  // bad packet received. abort due to error in connection.
@@ -176,21 +175,20 @@ int main(int argc, char **argv) {
                     detect_print_error(&rsp_pkt, i);
                     return -1;
                 } else {
-                    // I don't expect this to ever be relevant, but just on the safe side...
                     log_error("Unrecognized packet %d type: neither ACK or REJECT Packet. Quit.", i);
                     return -1;
                 }
-            } else if (poll_ret == 0) {
+            } else if (poll_res == 0) {
                 attempt_counter++;
                 // Retry
                 if (attempt_counter <= CLIENT_MAX_ATTEMPTS) {
                     log_warn("No Response from Server to Client. Attempt %d. Retransmitting...", attempt_counter);
                     if (sendto(client_sock_fd, &req_pkt, sizeof(request_packet), 0, (struct sockaddr *)&server_addr, addrlen) < 0) {
-                        log_error("Client experienced error in sending packet %d to Server.", i);
+                        log_error("Error: Client experienced error in sending packet %d to Server.", i);
                         return -1;
                     }
                 }
-            } else {  // Something's gone wrong with the poll - abort!
+            } else {  // Encounter error in poll()
                 log_error("Client Experienced Error in Polling. Stop.");
                 return -1;
             }
@@ -199,7 +197,7 @@ int main(int argc, char **argv) {
         // If we've somehow timed out after three attempts at transmission,
         // Then we need to quit sending packets and exit.
         if (attempt_counter > CLIENT_MAX_ATTEMPTS) {
-            log_error("Time-Out Error: Client Attmpted to Send Packet %d thrice. Quit.", i);
+            log_error("Retry timeout: Client attmpted to send packet %d three times and failed to get any responses from server. Quit.", i);
             close(client_sock_fd);
             return -1;
         }
